@@ -1,42 +1,103 @@
 <script setup lang="ts">
-import { ref, type Ref } from 'vue'
+import { onMounted, ref, type Ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
-interface TaskObject {
+//
+
+type TaskObject = {
+  [key: string]: string | null | undefined
+  id?: string
   name: string
   date: string
-  done: boolean
+  conclusion_date: string | null
 }
 
-const showModal = ref(false)
-const tasks: Ref<TaskObject[]> = ref([{ name: 'Atividade X', date: '22/30/2024', done: false }])
+//
 
-function handleAddTaskOnClick(): void {
-  addTask('test', 'test')
+const showModal = ref(false)
+const tasks: Ref<TaskObject[]> = ref([])
+
+//
+
+onMounted(() => {
+  fetchTasks()
+})
+
+//
+
+function handleSubmit(e: Event) {
+  const obj: TaskObject = { name: '', date: '', conclusion_date: null }
+  const inputs: Array<HTMLInputElement> = [...(e?.target as any)].filter(
+    (el) => el?.localName === 'input'
+  )
+
+  inputs.forEach((el) => {
+    obj[el?.name] = el.value
+  })
+
+  addTask(obj?.name, obj?.date)
   showModal.value = false
 }
 
-function addTask(task: string, deadline: string): void {
-  if (task && deadline) {
-    tasks.value.push({ name: 'Atividade X', date: '22/30/2024', done: false })
-  }
+async function addTask(name: string, deadline: string) {
+  const success = await createTask(name, deadline)
+
+  if (!success) throw new Error('Something went wrong! Try again later...')
+
+  tasks.value.push({
+    name: name,
+    date: deadline,
+    conclusion_date: null
+  })
+}
+
+async function completeATask(taskId: string | undefined) {
+  const taskIndex = tasks.value.findIndex((task) => task?.id === taskId)
+  const curDate = new Date().toISOString().slice(0, 19).replace('T', ' ').split(' ')[0]
+  const valueToAdd = tasks.value[taskIndex].conclusion_date ? null : curDate
+
+  const success = updateTaskConclusionDate(valueToAdd)
+
+  if (!success) throw new Error('Something went wrong! Try again later...')
+
+  tasks.value[taskIndex].conclusion_date = valueToAdd
+}
+
+function fetchTasks() {
+  //----------------------------------------------------------------------- @TODO: FETCH PRA API PARA PEGAR TAREFAS!
+  tasks.value = [
+    { id: '1aD9', name: 'Atividade 1', date: '2024-05-20', conclusion_date: null },
+    { id: '2Dko', name: 'Atividade 2', date: '2024-06-13', conclusion_date: '2024-06-10' },
+    { id: '9jD8', name: 'Atividade 3', date: '2024-04-30', conclusion_date: null }
+  ]
+}
+
+function createTask(name: string, deadline: string) {
+  console.log(name, deadline)
+  //----------------------------------------------------------------------- @TODO: POST PARA ADICIONAR TAREFAS!
+  return true
+}
+
+function updateTaskConclusionDate(conclusionDate: string | null) {
+  console.log(conclusionDate)
+  //----------------------------------------------------------------------- @TODO: POST PARA ATUALIZAR TAREFAS!
+  return true
 }
 </script>
 
 <template>
   <!-- MODAL -->
   <div class="modalWrapper" v-if="showModal">
-    <div class="modal">
+    <form class="modal" @submit="handleSubmit">
       <h3>Adicionar uma tarefa</h3>
-
-      <input type="text" placeholder="Adicionar uma tarefa" autofocus />
-      <input type="date" placeholder="Data de conclusão" />
+      <input name="name" type="text" placeholder="Adicionar uma tarefa" autofocus required />
+      <input name="date" type="date" placeholder="Data de conclusão" required />
 
       <div class="buttonsWrapper">
-        <button @click="handleAddTaskOnClick">Salvar</button>
+        <button type="submit">Salvar</button>
         <button @click="showModal = false">Cancelar</button>
       </div>
-    </div>
+    </form>
   </div>
   <!--  -->
 
@@ -53,7 +114,6 @@ function addTask(task: string, deadline: string): void {
   <main>
     <div class="blockButton taskFilter">
       <span>Tarefas</span>
-      <img src="@/assets/quit.svg" width="24" />
     </div>
 
     <div v-if="tasks.length === 0" class="mainView">
@@ -64,15 +124,24 @@ function addTask(task: string, deadline: string): void {
     </div>
 
     <div v-if="tasks.length > 0">
-      <div class="blockButton taskButton" v-for="task in tasks" :key="task.name">
+      <div
+        class="blockButton taskButton"
+        name="task.id"
+        v-for="task in tasks"
+        :key="task.name"
+        @click="completeATask(task.id)"
+      >
         <div class="task">
           <div class="checked">
-            <img v-if="!task.done" src="@/assets/round.svg" width="20" />
-            <img v-if="task.done" src="@/assets/done.svg" width="20" />
+            <img v-if="!task.conclusion_date" src="@/assets/round.svg" width="20" />
+            <img v-if="task.conclusion_date" src="@/assets/done.svg" width="20" />
           </div>
           <div class="data">
             <div>
-              <b>{{ task.name }}</b>
+              <s v-if="task.conclusion_date"
+                ><b>{{ task.name }}</b></s
+              >
+              <b v-if="!task.conclusion_date">{{ task.name }}</b>
             </div>
             <div>Conclusão em: {{ task.date }}</div>
           </div>

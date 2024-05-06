@@ -1,5 +1,30 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import router from '@/router'
+
+type Data = {
+  email: string
+  password: string
+  [key: string]: string
+}
+
+function sendData(e: Event) {
+  e.preventDefault()
+
+  const obj: Data = { password: '', email: '' }
+  const inputs: Array<HTMLInputElement> = [...(e?.target as any)].filter(
+    (el) => el?.localName === 'input'
+  )
+
+  inputs.forEach((el) => {
+    obj[el?.name] = el.value
+  })
+
+  console.log(obj)
+
+  //----------------------------------------------------------------------- @TODO: FETCH PRA API!
+
+  router.push({ name: 'tarefas' })
+}
 </script>
 
 <template>
@@ -7,24 +32,29 @@ import { RouterLink } from 'vue-router'
     <div class="loginWrapper">
       <img src="@/assets/logo.svg" width="180" />
 
-      <div class="form">
+      <form class="form" @submit="sendData">
         <div class="inputWrapper">
           <img src="@/assets/mail.svg" width="16" height="16" />
-          <input class="inputMail" type="email" placeholder="e-mail" />
+          <input
+            name="email"
+            class="inputMail"
+            type="email"
+            placeholder="e-mail"
+            autofocus
+            required
+          />
         </div>
 
         <div class="inputWrapper">
           <img src="@/assets/pass.svg" width="16" height="16" />
           <div class="passWrapper">
-            <input class="inputPass" type="password" placeholder="senha" />
+            <input name="password" class="inputPass" type="password" placeholder="senha" required />
             <img src="@/assets/eye.svg" width="16" height="16" />
           </div>
         </div>
-      </div>
 
-      <RouterLink class="linkButton" to="/tarefas">
         <button class="button" type="submit">Login</button>
-      </RouterLink>
+      </form>
     </div>
   </main>
 </template>
